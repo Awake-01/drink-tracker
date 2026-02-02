@@ -449,6 +449,37 @@ function bindStatsEvents() {
 
 // 更新统计数据
 function updateStats() {
+    updateOverview();
+    updateBrandRanking();
+}
+
+// 更新总览数据
+function updateOverview() {
+    const yearSelect = document.getElementById('year-select');
+    const monthSelect = document.getElementById('month-select');
+    const selectedYear = parseInt(yearSelect.value);
+    const selectedMonth = parseInt(monthSelect.value);
+
+    // 筛选指定年月的记录
+    const filteredRecords = drinkRecords.filter(record => {
+        const recordDate = new Date(record.timestamp);
+        return recordDate.getFullYear() === selectedYear && 
+               recordDate.getMonth() + 1 === selectedMonth;
+    });
+
+    // 计算总览数据
+    const totalCount = filteredRecords.length;
+    const totalCalories = filteredRecords.reduce((sum, record) => sum + (record.calories || 0), 0);
+    const totalPrice = filteredRecords.reduce((sum, record) => sum + (record.price || 0), 0);
+
+    // 更新UI
+    document.getElementById('total-count').textContent = totalCount;
+    document.getElementById('total-calories').textContent = totalCalories;
+    document.getElementById('total-price').textContent = totalPrice.toFixed(2);
+}
+
+// 更新品牌排行榜
+function updateBrandRanking() {
     const yearSelect = document.getElementById('year-select');
     const monthSelect = document.getElementById('month-select');
     const brandRankingBody = document.getElementById('brand-ranking-body');
@@ -773,8 +804,6 @@ function bindConfirmDeleteEvents() {
         }, 300);
     });
 }
-
-
 
 // 绑定备份提示事件
 function bindBackupReminderEvents() {
