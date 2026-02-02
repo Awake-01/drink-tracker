@@ -31,19 +31,19 @@ document.addEventListener('DOMContentLoaded', function() {
 function initApp() {
     // 从本地存储加载数据
     loadDataFromLocalStorage();
-    
+
     // 初始化年份选择器
     initYearSelector();
-    
+
     // 设置当前年月为默认筛选条件
     setCurrentYearMonth();
-    
+
     // 检查是否需要显示备份提示
     checkBackupReminder();
-    
+
     // 更新上次备份时间显示
     updateLastBackupTime();
-    
+
     // 初始化月份选择器
     const yearSelect = document.getElementById('year-select');
     if (yearSelect.value) {
@@ -101,12 +101,12 @@ function initYearSelector() {
 // 获取有数据的年份
 function getYearsWithData() {
     const years = new Set();
-    
+
     drinkRecords.forEach(record => {
         const recordDate = new Date(record.timestamp);
         years.add(recordDate.getFullYear());
     });
-    
+
     // 转换为数组并降序排序
     return Array.from(years).sort((a, b) => b - a);
 }
@@ -114,14 +114,14 @@ function getYearsWithData() {
 // 获取指定年份有数据的月份
 function getMonthsWithData(year) {
     const months = new Set();
-    
+
     drinkRecords.forEach(record => {
         const recordDate = new Date(record.timestamp);
         if (recordDate.getFullYear() === year) {
             months.add(recordDate.getMonth() + 1); // 月份从1开始
         }
     });
-    
+
     // 转换为数组并升序排序
     return Array.from(months).sort((a, b) => a - b);
 }
@@ -129,19 +129,19 @@ function getMonthsWithData(year) {
 // 初始化月份选择器
 function initMonthSelector(year) {
     const monthSelect = document.getElementById('month-select');
-    
+
     // 从记录中提取指定年份有数据的月份
     const monthsWithData = getMonthsWithData(year);
-    
+
     // 如果没有数据，添加当前月份
     if (monthsWithData.length === 0) {
         const currentMonth = new Date().getMonth() + 1;
         monthsWithData.push(currentMonth);
     }
-    
+
     // 清空现有选项
     monthSelect.innerHTML = '';
-    
+
     // 生成月份选项
     monthsWithData.forEach(month => {
         const option = document.createElement('option');
@@ -156,20 +156,20 @@ function setCurrentYearMonth() {
     const currentDate = new Date();
     const yearSelect = document.getElementById('year-select');
     const monthSelect = document.getElementById('month-select');
-    
+
     // 获取有数据的年份
     const yearsWithData = getYearsWithData();
     
     // 如果有数据，选择最新的年份
     if (yearsWithData.length > 0) {
         yearSelect.value = yearsWithData[0];
-        
+
         // 根据选择的年份初始化月份选择器
         initMonthSelector(parseInt(yearSelect.value));
-        
+
         // 获取选择年份有数据的月份
         const monthsWithData = getMonthsWithData(parseInt(yearSelect.value));
-        
+
         // 如果有数据，选择最新的月份
         if (monthsWithData.length > 0) {
             monthSelect.value = monthsWithData[monthsWithData.length - 1];
@@ -229,9 +229,9 @@ function bindRecordFormEvents() {
     const recordModal = document.getElementById('record-modal');
     const closeModalBtns = document.querySelectorAll('.close-modal');
     const recordForm = document.getElementById('record-form');
-    const drinkTypeBtns = document.querySelectorAll('.drink-type-btn');
+    const drinkTypeBtns = document.querySelectorAll('.type-tag');
     const drinkTypeInput = document.getElementById('drink-type');
-    const drinkBrandBtns = document.querySelectorAll('.drink-brand-btn');
+    const drinkBrandBtns = document.querySelectorAll('.brand-tag');
     const drinkBrandInput = document.getElementById('drink-brand');
     
     // 绑定饮品类型标签点击事件
@@ -260,39 +260,41 @@ function bindRecordFormEvents() {
             // 更新隐藏输入字段的值
             drinkBrandInput.value = this.getAttribute('data-value');
             
-            // 如果选择了"其它"，显示输入框让用户自定义品牌
-            if (this.getAttribute('data-value') === '其它') {
-                // 检查是否已存在自定义输入框
-                let customBrandInput = document.getElementById('custom-brand-input');
-                if (!customBrandInput) {
-                    customBrandInput = document.createElement('input');
-                    customBrandInput.type = 'text';
-                    customBrandInput.id = 'custom-brand-input';
-                    customBrandInput.className = 'mt-2 w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500';
-                    customBrandInput.placeholder = '请输入品牌名称';
-                    
-                    // 添加输入事件监听
-                    customBrandInput.addEventListener('input', function() {
-                        drinkBrandInput.value = this.value || '其它';
-                    });
-                    
-                    // 将输入框插入到品牌容器后面
-                    const brandContainer = document.getElementById('drink-brand-container');
-                    brandContainer.parentNode.insertBefore(customBrandInput, brandContainer.nextSibling);
-                }
-                
-                // 显示输入框并聚焦
-                customBrandInput.classList.remove('hidden');
-                customBrandInput.focus();
-            } else {
-                // 隐藏自定义输入框（如果存在）
-                const customBrandInput = document.getElementById('custom-brand-input');
-                if (customBrandInput) {
-                    customBrandInput.classList.add('hidden');
-                }
-            }
+            // 处理自定义品牌输入框
+            handleCustomBrandInput(this.getAttribute('data-value'));
         });
     });
+    
+    // 处理自定义品牌输入框的显示和隐藏
+    function handleCustomBrandInput(brandValue) {
+        // 先隐藏已存在的自定义输入框
+        const existingInput = document.getElementById('custom-brand-input');
+        if (existingInput) {
+            existingInput.style.display = 'none';
+        } 
+        // 如果选择了"其它"，显示或创建自定义输入框
+        if (brandValue === '其它') {
+            let customInput = existingInput;
+            if (!customInput) {
+                // 创建新的输入框
+                customInput = document.createElement('input');
+                customInput.type = 'text';
+                customInput.id = 'custom-brand-input';
+                customInput.className = 'custom-brand-input form-input';
+                customInput.placeholder = '请输入品牌名称';
+                // 添加输入事件监听
+                customInput.addEventListener('input', function() {
+                    drinkBrandInput.value = this.value.trim() || '其它';
+                });
+                // 将输入框插入到品牌容器后面
+                const brandContainer = document.getElementById('drink-brand-container');
+                brandContainer.parentNode.insertBefore(customInput, brandContainer.nextSibling);
+            }
+            // 显示输入框并聚焦
+            customInput.style.display = 'block';
+            customInput.focus();
+        }
+    }
     
     // 点击添加记录按钮
     addRecordBtn.addEventListener('click', function() {
@@ -325,9 +327,23 @@ function bindRecordFormEvents() {
         e.preventDefault();
         
         // 获取表单数据
+        const type = document.getElementById('drink-type').value;
+        const brand = document.getElementById('drink-brand').value;
+        
+        // 验证必填字段
+        if (!type) {
+            alert('请选择饮品类型');
+            return;
+        }
+        
+        if (!brand) {
+            alert('请选择饮品品牌');
+            return;
+        }
+        
         const formData = {
-            type: document.getElementById('drink-type').value,
-            brand: document.getElementById('drink-brand').value,
+            type: type,
+            brand: brand,
             name: document.getElementById('drink-name').value || '',
             calories: document.getElementById('drink-calories').value ? parseInt(document.getElementById('drink-calories').value) : null,
             price: document.getElementById('drink-price').value ? parseFloat(document.getElementById('drink-price').value) : null
@@ -336,11 +352,9 @@ function bindRecordFormEvents() {
         // 如果是编辑模式，更新现有记录
         if (currentRecordId) {
             updateRecord(currentRecordId, formData);
-            showToast('记录已更新');
         } else {
             // 否则添加新记录
             addRecord(formData);
-            showToast('记录已添加');
         }
         
         // 关闭弹窗
@@ -361,12 +375,12 @@ function resetRecordForm() {
     currentRecordId = null;
     
     // 重置饮品类型标签
-    const drinkTypeBtns = document.querySelectorAll('.drink-type-btn');
+    const drinkTypeBtns = document.querySelectorAll('.type-tag');
     drinkTypeBtns.forEach(btn => btn.classList.remove('active'));
     document.getElementById('drink-type').value = '';
     
     // 重置品牌标签
-    const drinkBrandBtns = document.querySelectorAll('.drink-brand-btn');
+    const drinkBrandBtns = document.querySelectorAll('.brand-tag');
     drinkBrandBtns.forEach(btn => btn.classList.remove('active'));
     document.getElementById('drink-brand').value = '';
     
@@ -408,7 +422,6 @@ function deleteRecord(id) {
     if (index !== -1) {
         drinkRecords.splice(index, 1);
         saveDataToLocalStorage();
-        showToast('记录已删除');
     }
 }
 
@@ -468,7 +481,7 @@ function updateStats() {
     // 如果没有数据，显示空状态
     if (brandRanking.length === 0) {
         const emptyRow = document.createElement('tr');
-        emptyRow.innerHTML = `<td colspan="3" class="py-4 text-center text-gray-500">暂无数据</td>`;
+        emptyRow.innerHTML = `<td colspan="3" class="empty-cell">暂无数据</td>`;
         brandRankingBody.appendChild(emptyRow);
         return;
     }
@@ -477,27 +490,19 @@ function updateStats() {
     brandRanking.forEach((item, index) => {
         const row = document.createElement('tr');
         row.className = index < 3 ? `rank-${index + 1}` : '';
-        
         row.innerHTML = `
             <td class="py-3 px-4 border-b border-gray-200">${index + 1}</td>
             <td class="py-3 px-4 border-b border-gray-200">${item.brand}</td>
             <td class="py-3 px-4 border-b border-gray-200">${item.count}</td>
         `;
-        
         brandRankingBody.appendChild(row);
     });
 }
 
 // 绑定数据管理事件
 function bindDataManagementEvents() {
-    const importBtn = document.getElementById('import-btn');
     const exportBtn = document.getElementById('export-btn');
     const importFile = document.getElementById('import-file');
-    
-    // 导入按钮点击事件
-    importBtn.addEventListener('click', function() {
-        importFile.click();
-    });
     
     // 文件选择事件
     importFile.addEventListener('change', function(e) {
@@ -532,13 +537,11 @@ function bindDataManagementEvents() {
                         
                         // 更新记录列表
                         updateRecordsTable();
-                        
-                        showToast('数据导入成功');
                     } else {
-                        showToast('导入失败：无效的数据格式', 'error');
+                        console.error('无效的数据格式');
                     }
                 } catch (error) {
-                    showToast('导入失败：解析文件时出错', 'error');
+                    console.error('解析文件时出错:', error);
                 }
             };
             reader.readAsText(file);
@@ -557,7 +560,7 @@ function bindDataManagementEvents() {
 // 导出数据
 function exportData() {
     if (drinkRecords.length === 0) {
-        showToast('没有数据可导出', 'warning');
+        console.log('没有数据可导出');
         return;
     }
     
@@ -571,8 +574,6 @@ function exportData() {
     
     // 更新最后备份时间
     updateLastBackupTime(true);
-    
-    showToast('数据导出成功');
 }
 
 // 更新记录列表
@@ -585,7 +586,7 @@ function updateRecordsTable() {
     // 如果没有记录，显示空状态
     if (drinkRecords.length === 0) {
         const emptyRow = document.createElement('tr');
-        emptyRow.innerHTML = `<td colspan="7" class="py-4 text-center text-gray-500">暂无记录</td>`;
+        emptyRow.innerHTML = `<td colspan="7" class="empty-cell">暂无记录</td>`;
         recordsTableBody.appendChild(emptyRow);
         return;
     }
@@ -603,10 +604,10 @@ function updateRecordsTable() {
             <td class="py-3 px-4 border-b border-gray-200">${record.calories !== null ? record.calories : '-'}</td>
             <td class="py-3 px-4 border-b border-gray-200">${record.price !== null ? record.price.toFixed(2) : '-'}</td>
             <td class="py-3 px-4 border-b border-gray-200">
-                <button class="edit-btn text-blue-600 hover:text-blue-800 mr-2" data-id="${record.id}">
+                <button class="edit-btn" data-id="${record.id}">
                     <i class="fa fa-pencil"></i>
                 </button>
-                <button class="delete-btn text-red-600 hover:text-red-800" data-id="${record.id}">
+                <button class="delete-btn" data-id="${record.id}">
                     <i class="fa fa-trash"></i>
                 </button>
             </td>
@@ -657,7 +658,7 @@ function editRecord(id) {
     document.getElementById('drink-price').value = record.price || '';
     
     // 设置饮品类型标签
-    const drinkTypeBtns = document.querySelectorAll('.drink-type-btn');
+    const drinkTypeBtns = document.querySelectorAll('.type-tag');
     const drinkTypeInput = document.getElementById('drink-type');
     
     drinkTypeBtns.forEach(btn => {
@@ -669,7 +670,7 @@ function editRecord(id) {
     });
     
     // 设置品牌标签
-    const drinkBrandBtns = document.querySelectorAll('.drink-brand-btn');
+    const drinkBrandBtns = document.querySelectorAll('.brand-tag');
     const drinkBrandInput = document.getElementById('drink-brand');
     let brandFound = false;
     
@@ -773,46 +774,7 @@ function bindConfirmDeleteEvents() {
     });
 }
 
-// 显示提示框
-function showToast(message, type = 'success') {
-    const toast = document.getElementById('toast');
-    const toastMessage = document.getElementById('toast-message');
-    
-    // 设置消息
-    toastMessage.textContent = message;
-    
-    // 设置类型样式
-    toast.className = 'fixed bottom-4 right-4 px-4 py-2 rounded-md shadow-lg transform transition-all duration-300 z-50';
-    
-    switch (type) {
-        case 'success':
-            toast.classList.add('bg-green-500', 'text-white');
-            toast.querySelector('i').className = 'fa fa-check-circle mr-2';
-            break;
-        case 'error':
-            toast.classList.add('bg-red-500', 'text-white');
-            toast.querySelector('i').className = 'fa fa-exclamation-circle mr-2';
-            break;
-        case 'warning':
-            toast.classList.add('bg-yellow-500', 'text-white');
-            toast.querySelector('i').className = 'fa fa-exclamation-triangle mr-2';
-            break;
-    }
-    
-    // 显示提示框
-    toast.classList.add('visible');
-    
-    // 3秒后隐藏
-    setTimeout(() => {
-        toast.classList.remove('visible');
-        toast.classList.add('hidden');
-        
-        // 延迟后重置类名
-        setTimeout(() => {
-            toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg transform translate-y-10 opacity-0 transition-all duration-300 z-50';
-        }, 300);
-    }, 3000);
-}
+
 
 // 绑定备份提示事件
 function bindBackupReminderEvents() {
