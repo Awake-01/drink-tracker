@@ -1,0 +1,239 @@
+/* 自定义样式 */
+body {
+    font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* 导航栏激活状态 */
+.nav-item.active a {
+    color: #2563eb;
+    border-bottom: 2px solid #2563eb;
+}
+
+/* 页面切换动画 */
+.page-content {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    width: 100%;
+}
+
+.page-content.hidden {
+    opacity: 0;
+    transform: translateX(20px);
+    position: absolute;
+    width: 100%;
+    pointer-events: none;
+}
+
+.page-content.active {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* 按钮悬停效果 */
+button {
+    transition: all 0.2s ease;
+}
+
+button:hover {
+    transform: translateY(-1px);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+/* 记录按钮特殊样式 */
+#add-record-btn {
+    box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+}
+
+/* 表单输入焦点样式 */
+input:focus, select:focus {
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+/* 表格样式 */
+table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+th {
+    position: sticky;
+    top: 0;
+    background-color: #f9fafb;
+    z-index: 10;
+}
+
+tr:hover {
+    background-color: #f9fafb;
+}
+
+/* 排名样式 */
+.rank-1 {
+    background-color: #fef3c7;
+    font-weight: bold;
+}
+
+.rank-2 {
+    background-color: #f3f4f6;
+    font-weight: bold;
+}
+
+.rank-3 {
+    background-color: #fed7d7;
+    font-weight: bold;
+}
+
+/* 弹窗动画 */
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes modalFadeOut {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+}
+
+#record-modal.visible,
+#confirm-modal.visible,
+#backup-modal.visible {
+    display: flex;
+    animation: modalFadeIn 0.3s ease forwards;
+}
+
+#record-modal.hidden,
+#confirm-modal.hidden,
+#backup-modal.hidden {
+    animation: modalFadeOut 0.3s ease forwards;
+}
+
+/* 提示框动画 */
+@keyframes toastSlideIn {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes toastSlideOut {
+    from {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+}
+
+#toast.visible {
+    animation: toastSlideIn 0.3s ease forwards;
+}
+
+#toast.hidden {
+    animation: toastSlideOut 0.3s ease forwards;
+}
+
+/* 饮品类型标签样式 */
+.drink-type-btn {
+    transition: all 0.2s ease;
+}
+
+.drink-type-btn:hover {
+    border-color: #3b82f6;
+    background-color: #eff6ff;
+}
+
+.drink-type-btn.active {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+    color: white;
+}
+
+/* 饮品品牌标签样式 */
+.drink-brand-btn {
+    transition: all 0.2s ease;
+}
+
+.drink-brand-btn:hover {
+    border-color: #3b82f6;
+    background-color: #eff6ff;
+}
+
+.drink-brand-btn.active {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+    color: white;
+}
+
+/* 响应式设计 */
+@media (max-width: 640px) {
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    #add-record-btn {
+        font-size: 1.25rem;
+        padding: 0.75rem 1.5rem;
+    }
+    
+    .flex.flex-wrap.gap-4 {
+        gap: 1rem;
+    }
+    
+    table {
+        font-size: 0.875rem;
+    }
+    
+    th, td {
+        padding: 0.5rem;
+    }
+}
+
+/* 加载动画 */
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(37, 99, 235, 0.3);
+    border-radius: 50%;
+    border-top-color: #2563eb;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* 空状态样式 */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6b7280;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #d1d5db;
+}
