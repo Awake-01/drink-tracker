@@ -1,0 +1,885 @@
+// 全局变量
+let drinkRecords = [];
+let currentRecordId = null;
+let recordToDelete = null;
+
+// DOM 加载完成后执行
+document.addEventListener('DOMContentLoaded', function() {
+    // 初始化应用
+    initApp();
+    
+    // 绑定导航事件
+    bindNavigationEvents();
+    
+    // 绑定记录表单事件
+    bindRecordFormEvents();
+    
+    // 绑定统计页面事件
+    bindStatsEvents();
+    
+    // 绑定数据管理事件
+    bindDataManagementEvents();
+    
+    // 绑定确认删除事件
+    bindConfirmDeleteEvents();
+    
+    // 绑定备份提示事件
+    bindBackupReminderEvents();
+});
+
+// 初始化应用
+function initApp() {
+    // 从本地存储加载数据
+    loadDataFromLocalStorage();
+    
+    // 初始化年份选择器
+    initYearSelector();
+    
+    // 设置当前年月为默认筛选条件
+    setCurrentYearMonth();
+    
+    // 检查是否需要显示备份提示
+    checkBackupReminder();
+    
+    // 更新上次备份时间显示
+    updateLastBackupTime();
+    
+    // 初始化月份选择器
+    const yearSelect = document.getElementById('year-select');
+    if (yearSelect.value) {
+        initMonthSelector(parseInt(yearSelect.value));
+    }
+}
+
+// 从本地存储加载数据
+function loadDataFromLocalStorage() {
+    const storedRecords = localStorage.getItem('drinkRecords');
+    if (storedRecords) {
+        drinkRecords = JSON.parse(storedRecords);
+    }
+    
+    // 按时间戳降序排序（最新的记录在前）
+    drinkRecords.sort((a, b) => b.timestamp - a.timestamp);
+}
+
+// 保存数据到本地存储
+function saveDataToLocalStorage() {
+    localStorage.setItem('drinkRecords', JSON.stringify(drinkRecords));
+    
+    // 更新记录列表
+    updateRecordsTable();
+    
+    // 更新统计数据
+    updateStats();
+}
+
+// 初始化年份选择器
+function initYearSelector() {
+    const yearSelect = document.getElementById('year-select');
+    
+    // 从记录中提取有数据的年份
+    const yearsWithData = getYearsWithData();
+    
+    // 如果没有数据，添加当前年份
+    if (yearsWithData.length === 0) {
+        const currentYear = new Date().getFullYear();
+        yearsWithData.push(currentYear);
+    }
+    
+    // 清空现有选项
+    yearSelect.innerHTML = '';
+    
+    // 生成年份选项
+    yearsWithData.forEach(year => {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year + '年';
+        yearSelect.appendChild(option);
+    });
+}
+
+// 获取有数据的年份
+function getYearsWithData() {
+    const years = new Set();
+    
+    drinkRecords.forEach(record => {
+        const recordDate = new Date(record.timestamp);
+        years.add(recordDate.getFullYear());
+    });
+    
+    // 转换为数组并降序排序
+    return Array.from(years).sort((a, b) => b - a);
+}
+
+// 获取指定年份有数据的月份
+function getMonthsWithData(year) {
+    const months = new Set();
+    
+    drinkRecords.forEach(record => {
+        const recordDate = new Date(record.timestamp);
+        if (recordDate.getFullYear() === year) {
+            months.add(recordDate.getMonth() + 1); // 月份从1开始
+        }
+    });
+    
+    // 转换为数组并升序排序
+    return Array.from(months).sort((a, b) => a - b);
+}
+
+// 初始化月份选择器
+function initMonthSelector(year) {
+    const monthSelect = document.getElementById('month-select');
+    
+    // 从记录中提取指定年份有数据的月份
+    const monthsWithData = getMonthsWithData(year);
+    
+    // 如果没有数据，添加当前月份
+    if (monthsWithData.length === 0) {
+        const currentMonth = new Date().getMonth() + 1;
+        monthsWithData.push(currentMonth);
+    }
+    
+    // 清空现有选项
+    monthSelect.innerHTML = '';
+    
+    // 生成月份选项
+    monthsWithData.forEach(month => {
+        const option = document.createElement('option');
+        option.value = month;
+        option.textContent = month + '月';
+        monthSelect.appendChild(option);
+    });
+}
+
+// 设置当前年月为默认筛选条件
+function setCurrentYearMonth() {
+    const currentDate = new Date();
+    const yearSelect = document.getElementById('year-select');
+    const monthSelect = document.getElementById('month-select');
+    
+    // 获取有数据的年份
+    const yearsWithData = getYearsWithData();
+    
+    // 如果有数据，选择最新的年份
+    if (yearsWithData.length > 0) {
+        yearSelect.value = yearsWithData[0];
+        
+        // 根据选择的年份初始化月份选择器
+        initMonthSelector(parseInt(yearSelect.value));
+        
+        // 获取选择年份有数据的月份
+        const monthsWithData = getMonthsWithData(parseInt(yearSelect.value));
+        
+        // 如果有数据，选择最新的月份
+        if (monthsWithData.length > 0) {
+            monthSelect.value = monthsWithData[monthsWithData.length - 1];
+        }
+    } else {
+        // 如果没有数据，使用当前年月
+        yearSelect.value = currentDate.getFullYear();
+        monthSelect.value = currentDate.getMonth() + 1;
+    }
+}
+
+// 绑定导航事件
+function bindNavigationEvents() {
+    const navItems = document.querySelectorAll('.nav-item');
+    const pageContents = document.querySelectorAll('.page-content');
+    
+    navItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // 移除所有导航项的激活状态
+            navItems.forEach(nav => nav.classList.remove('active'));
+            
+            // 添加当前导航项的激活状态
+            this.classList.add('active');
+            
+            // 获取目标页面ID
+            const targetId = this.getAttribute('data-target');
+            
+            // 隐藏所有页面
+            pageContents.forEach(page => {
+                page.classList.remove('active');
+                page.classList.add('hidden');
+            });
+            
+            // 显示目标页面
+            const targetPage = document.getElementById(targetId);
+            targetPage.classList.remove('hidden');
+            targetPage.classList.add('active');
+            
+            // 如果切换到统计页面，更新统计数据
+            if (targetId === 'stats-page') {
+                updateStats();
+            }
+            
+            // 如果切换到数据页面，更新记录列表
+            if (targetId === 'data-page') {
+                updateRecordsTable();
+            }
+        });
+    });
+}
+
+// 绑定记录表单事件
+function bindRecordFormEvents() {
+    const addRecordBtn = document.getElementById('add-record-btn');
+    const recordModal = document.getElementById('record-modal');
+    const closeModalBtns = document.querySelectorAll('.close-modal');
+    const recordForm = document.getElementById('record-form');
+    const drinkTypeBtns = document.querySelectorAll('.drink-type-btn');
+    const drinkTypeInput = document.getElementById('drink-type');
+    const drinkBrandBtns = document.querySelectorAll('.drink-brand-btn');
+    const drinkBrandInput = document.getElementById('drink-brand');
+    
+    // 绑定饮品类型标签点击事件
+    drinkTypeBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // 移除所有标签的激活状态
+            drinkTypeBtns.forEach(b => b.classList.remove('active'));
+            
+            // 添加当前标签的激活状态
+            this.classList.add('active');
+            
+            // 更新隐藏输入字段的值
+            drinkTypeInput.value = this.getAttribute('data-value');
+        });
+    });
+    
+    // 绑定品牌标签点击事件
+    drinkBrandBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // 移除所有标签的激活状态
+            drinkBrandBtns.forEach(b => b.classList.remove('active'));
+            
+            // 添加当前标签的激活状态
+            this.classList.add('active');
+            
+            // 更新隐藏输入字段的值
+            drinkBrandInput.value = this.getAttribute('data-value');
+            
+            // 如果选择了"其它"，显示输入框让用户自定义品牌
+            if (this.getAttribute('data-value') === '其它') {
+                // 检查是否已存在自定义输入框
+                let customBrandInput = document.getElementById('custom-brand-input');
+                if (!customBrandInput) {
+                    customBrandInput = document.createElement('input');
+                    customBrandInput.type = 'text';
+                    customBrandInput.id = 'custom-brand-input';
+                    customBrandInput.className = 'mt-2 w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500';
+                    customBrandInput.placeholder = '请输入品牌名称';
+                    
+                    // 添加输入事件监听
+                    customBrandInput.addEventListener('input', function() {
+                        drinkBrandInput.value = this.value || '其它';
+                    });
+                    
+                    // 将输入框插入到品牌容器后面
+                    const brandContainer = document.getElementById('drink-brand-container');
+                    brandContainer.parentNode.insertBefore(customBrandInput, brandContainer.nextSibling);
+                }
+                
+                // 显示输入框并聚焦
+                customBrandInput.classList.remove('hidden');
+                customBrandInput.focus();
+            } else {
+                // 隐藏自定义输入框（如果存在）
+                const customBrandInput = document.getElementById('custom-brand-input');
+                if (customBrandInput) {
+                    customBrandInput.classList.add('hidden');
+                }
+            }
+        });
+    });
+    
+    // 点击添加记录按钮
+    addRecordBtn.addEventListener('click', function() {
+        // 重置表单
+        resetRecordForm();
+        
+        // 显示弹窗
+        recordModal.classList.remove('hidden');
+        recordModal.classList.add('visible');
+        
+        // 设置标题
+        document.getElementById('modal-title').textContent = '添加饮品记录';
+    });
+    
+    // 点击关闭按钮
+    closeModalBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            recordModal.classList.remove('visible');
+            recordModal.classList.add('hidden');
+            
+            // 延迟后完全隐藏弹窗
+            setTimeout(() => {
+                recordModal.classList.add('hidden');
+            }, 300);
+        });
+    });
+    
+    // 提交表单
+    recordForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // 获取表单数据
+        const formData = {
+            type: document.getElementById('drink-type').value,
+            brand: document.getElementById('drink-brand').value,
+            name: document.getElementById('drink-name').value || '',
+            calories: document.getElementById('drink-calories').value ? parseInt(document.getElementById('drink-calories').value) : null,
+            price: document.getElementById('drink-price').value ? parseFloat(document.getElementById('drink-price').value) : null
+        };
+        
+        // 如果是编辑模式，更新现有记录
+        if (currentRecordId) {
+            updateRecord(currentRecordId, formData);
+            showToast('记录已更新');
+        } else {
+            // 否则添加新记录
+            addRecord(formData);
+            showToast('记录已添加');
+        }
+        
+        // 关闭弹窗
+        recordModal.classList.remove('visible');
+        recordModal.classList.add('hidden');
+        
+        // 延迟后完全隐藏弹窗
+        setTimeout(() => {
+            recordModal.classList.add('hidden');
+        }, 300);
+    });
+}
+
+// 重置记录表单
+function resetRecordForm() {
+    document.getElementById('record-form').reset();
+    document.getElementById('record-id').value = '';
+    currentRecordId = null;
+    
+    // 重置饮品类型标签
+    const drinkTypeBtns = document.querySelectorAll('.drink-type-btn');
+    drinkTypeBtns.forEach(btn => btn.classList.remove('active'));
+    document.getElementById('drink-type').value = '';
+    
+    // 重置品牌标签
+    const drinkBrandBtns = document.querySelectorAll('.drink-brand-btn');
+    drinkBrandBtns.forEach(btn => btn.classList.remove('active'));
+    document.getElementById('drink-brand').value = '';
+    
+    // 隐藏自定义品牌输入框（如果存在）
+    const customBrandInput = document.getElementById('custom-brand-input');
+    if (customBrandInput) {
+        customBrandInput.classList.add('hidden');
+        customBrandInput.value = '';
+    }
+}
+
+// 添加记录
+function addRecord(recordData) {
+    const newRecord = {
+        id: generateId(),
+        timestamp: Date.now(),
+        ...recordData
+    };
+    
+    drinkRecords.unshift(newRecord);
+    saveDataToLocalStorage();
+}
+
+// 更新记录
+function updateRecord(id, recordData) {
+    const index = drinkRecords.findIndex(record => record.id === id);
+    if (index !== -1) {
+        drinkRecords[index] = {
+            ...drinkRecords[index],
+            ...recordData
+        };
+        saveDataToLocalStorage();
+    }
+}
+
+// 删除记录
+function deleteRecord(id) {
+    const index = drinkRecords.findIndex(record => record.id === id);
+    if (index !== -1) {
+        drinkRecords.splice(index, 1);
+        saveDataToLocalStorage();
+        showToast('记录已删除');
+    }
+}
+
+// 生成唯一ID
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+}
+
+// 绑定统计页面事件
+function bindStatsEvents() {
+    const filterBtn = document.getElementById('filter-btn');
+    const yearSelect = document.getElementById('year-select');
+    
+    filterBtn.addEventListener('click', function() {
+        updateStats();
+    });
+    
+    // 当年份选择变化时，更新月份选择器
+    yearSelect.addEventListener('change', function() {
+        const selectedYear = parseInt(this.value);
+        initMonthSelector(selectedYear);
+        updateStats();
+    });
+}
+
+// 更新统计数据
+function updateStats() {
+    const yearSelect = document.getElementById('year-select');
+    const monthSelect = document.getElementById('month-select');
+    const brandRankingBody = document.getElementById('brand-ranking-body');
+    
+    const selectedYear = parseInt(yearSelect.value);
+    const selectedMonth = parseInt(monthSelect.value);
+    
+    // 筛选指定年月的记录
+    const filteredRecords = drinkRecords.filter(record => {
+        const recordDate = new Date(record.timestamp);
+        return recordDate.getFullYear() === selectedYear && 
+               recordDate.getMonth() + 1 === selectedMonth;
+    });
+    
+    // 按品牌统计杯数
+    const brandCounts = {};
+    filteredRecords.forEach(record => {
+        const brand = record.brand;
+        brandCounts[brand] = (brandCounts[brand] || 0) + 1;
+    });
+    
+    // 转换为数组并排序
+    const brandRanking = Object.entries(brandCounts)
+        .map(([brand, count]) => ({ brand, count }))
+        .sort((a, b) => b.count - a.count);
+    
+    // 清空表格
+    brandRankingBody.innerHTML = '';
+    
+    // 如果没有数据，显示空状态
+    if (brandRanking.length === 0) {
+        const emptyRow = document.createElement('tr');
+        emptyRow.innerHTML = `<td colspan="3" class="py-4 text-center text-gray-500">暂无数据</td>`;
+        brandRankingBody.appendChild(emptyRow);
+        return;
+    }
+    
+    // 生成排行榜
+    brandRanking.forEach((item, index) => {
+        const row = document.createElement('tr');
+        row.className = index < 3 ? `rank-${index + 1}` : '';
+        
+        row.innerHTML = `
+            <td class="py-3 px-4 border-b border-gray-200">${index + 1}</td>
+            <td class="py-3 px-4 border-b border-gray-200">${item.brand}</td>
+            <td class="py-3 px-4 border-b border-gray-200">${item.count}</td>
+        `;
+        
+        brandRankingBody.appendChild(row);
+    });
+}
+
+// 绑定数据管理事件
+function bindDataManagementEvents() {
+    const importBtn = document.getElementById('import-btn');
+    const exportBtn = document.getElementById('export-btn');
+    const importFile = document.getElementById('import-file');
+    
+    // 导入按钮点击事件
+    importBtn.addEventListener('click', function() {
+        importFile.click();
+    });
+    
+    // 文件选择事件
+    importFile.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const importedData = JSON.parse(event.target.result);
+                    if (Array.isArray(importedData)) {
+                        // 合并导入的数据
+                        drinkRecords = [...drinkRecords, ...importedData];
+                        
+                        // 去重
+                        const uniqueRecords = [];
+                        const ids = new Set();
+                        
+                        drinkRecords.forEach(record => {
+                            if (!ids.has(record.id)) {
+                                ids.add(record.id);
+                                uniqueRecords.push(record);
+                            }
+                        });
+                        
+                        drinkRecords = uniqueRecords;
+                        
+                        // 按时间戳降序排序
+                        drinkRecords.sort((a, b) => b.timestamp - a.timestamp);
+                        
+                        // 保存到本地存储
+                        saveDataToLocalStorage();
+                        
+                        // 更新记录列表
+                        updateRecordsTable();
+                        
+                        showToast('数据导入成功');
+                    } else {
+                        showToast('导入失败：无效的数据格式', 'error');
+                    }
+                } catch (error) {
+                    showToast('导入失败：解析文件时出错', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+        
+        // 重置文件输入
+        importFile.value = '';
+    });
+    
+    // 导出按钮点击事件
+    exportBtn.addEventListener('click', function() {
+        exportData();
+    });
+}
+
+// 导出数据
+function exportData() {
+    if (drinkRecords.length === 0) {
+        showToast('没有数据可导出', 'warning');
+        return;
+    }
+    
+    const dataStr = JSON.stringify(drinkRecords, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(dataBlob);
+    link.download = `drink-records-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    
+    // 更新最后备份时间
+    updateLastBackupTime(true);
+    
+    showToast('数据导出成功');
+}
+
+// 更新记录列表
+function updateRecordsTable() {
+    const recordsTableBody = document.getElementById('records-table-body');
+    
+    // 清空表格
+    recordsTableBody.innerHTML = '';
+    
+    // 如果没有记录，显示空状态
+    if (drinkRecords.length === 0) {
+        const emptyRow = document.createElement('tr');
+        emptyRow.innerHTML = `<td colspan="7" class="py-4 text-center text-gray-500">暂无记录</td>`;
+        recordsTableBody.appendChild(emptyRow);
+        return;
+    }
+    
+    // 生成记录列表
+    drinkRecords.forEach(record => {
+        const date = new Date(record.timestamp).toLocaleDateString('zh-CN');
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="py-3 px-4 border-b border-gray-200">${date}</td>
+            <td class="py-3 px-4 border-b border-gray-200">${record.type}</td>
+            <td class="py-3 px-4 border-b border-gray-200">${record.brand}</td>
+            <td class="py-3 px-4 border-b border-gray-200">${record.name || '-'}</td>
+            <td class="py-3 px-4 border-b border-gray-200">${record.calories !== null ? record.calories : '-'}</td>
+            <td class="py-3 px-4 border-b border-gray-200">${record.price !== null ? record.price.toFixed(2) : '-'}</td>
+            <td class="py-3 px-4 border-b border-gray-200">
+                <button class="edit-btn text-blue-600 hover:text-blue-800 mr-2" data-id="${record.id}">
+                    <i class="fa fa-pencil"></i>
+                </button>
+                <button class="delete-btn text-red-600 hover:text-red-800" data-id="${record.id}">
+                    <i class="fa fa-trash"></i>
+                </button>
+            </td>
+        `;
+        
+        recordsTableBody.appendChild(row);
+    });
+    
+    // 绑定编辑和删除按钮事件
+    bindEditDeleteEvents();
+}
+
+// 绑定编辑和删除按钮事件
+function bindEditDeleteEvents() {
+    const editBtns = document.querySelectorAll('.edit-btn');
+    const deleteBtns = document.querySelectorAll('.delete-btn');
+    const recordModal = document.getElementById('record-modal');
+    const confirmModal = document.getElementById('confirm-modal');
+    
+    // 编辑按钮点击事件
+    editBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const recordId = this.getAttribute('data-id');
+            editRecord(recordId);
+        });
+    });
+    
+    // 删除按钮点击事件
+    deleteBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const recordId = this.getAttribute('data-id');
+            recordToDelete = recordId;
+            confirmModal.classList.remove('hidden');
+            confirmModal.classList.add('visible');
+        });
+    });
+}
+
+// 编辑记录
+function editRecord(id) {
+    const record = drinkRecords.find(record => record.id === id);
+    if (!record) return;
+    
+    // 填充表单
+    document.getElementById('record-id').value = record.id;
+    document.getElementById('drink-name').value = record.name || '';
+    document.getElementById('drink-calories').value = record.calories || '';
+    document.getElementById('drink-price').value = record.price || '';
+    
+    // 设置饮品类型标签
+    const drinkTypeBtns = document.querySelectorAll('.drink-type-btn');
+    const drinkTypeInput = document.getElementById('drink-type');
+    
+    drinkTypeBtns.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('data-value') === record.type) {
+            btn.classList.add('active');
+            drinkTypeInput.value = record.type;
+        }
+    });
+    
+    // 设置品牌标签
+    const drinkBrandBtns = document.querySelectorAll('.drink-brand-btn');
+    const drinkBrandInput = document.getElementById('drink-brand');
+    let brandFound = false;
+    
+    drinkBrandBtns.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('data-value') === record.brand) {
+            btn.classList.add('active');
+            drinkBrandInput.value = record.brand;
+            brandFound = true;
+        }
+    });
+    
+    // 如果品牌不在预设列表中，选择"其它"并显示自定义输入框
+    if (!brandFound) {
+        // 选择"其它"标签
+        drinkBrandBtns.forEach(btn => {
+            if (btn.getAttribute('data-value') === '其它') {
+                btn.classList.add('active');
+            }
+        });
+        
+        // 设置品牌值
+        drinkBrandInput.value = record.brand;
+        
+        // 检查是否已存在自定义输入框
+        let customBrandInput = document.getElementById('custom-brand-input');
+        if (!customBrandInput) {
+            customBrandInput = document.createElement('input');
+            customBrandInput.type = 'text';
+            customBrandInput.id = 'custom-brand-input';
+            customBrandInput.className = 'mt-2 w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500';
+            customBrandInput.placeholder = '请输入品牌名称';
+            
+            // 添加输入事件监听
+            customBrandInput.addEventListener('input', function() {
+                drinkBrandInput.value = this.value || '其它';
+            });
+            
+            // 将输入框插入到品牌容器后面
+            const brandContainer = document.getElementById('drink-brand-container');
+            brandContainer.parentNode.insertBefore(customBrandInput, brandContainer.nextSibling);
+        }
+        
+        // 显示输入框并设置值
+        customBrandInput.classList.remove('hidden');
+        customBrandInput.value = record.brand;
+    } else {
+        // 隐藏自定义输入框（如果存在）
+        const customBrandInput = document.getElementById('custom-brand-input');
+        if (customBrandInput) {
+            customBrandInput.classList.add('hidden');
+            customBrandInput.value = '';
+        }
+    }
+    
+    // 设置当前编辑的记录ID
+    currentRecordId = id;
+    
+    // 设置标题
+    document.getElementById('modal-title').textContent = '编辑饮品记录';
+    
+    // 显示弹窗
+    const recordModal = document.getElementById('record-modal');
+    recordModal.classList.remove('hidden');
+    recordModal.classList.add('visible');
+}
+
+// 绑定确认删除事件
+function bindConfirmDeleteEvents() {
+    const confirmModal = document.getElementById('confirm-modal');
+    const cancelDeleteBtn = document.getElementById('cancel-delete');
+    const confirmDeleteBtn = document.getElementById('confirm-delete');
+    
+    // 取消删除
+    cancelDeleteBtn.addEventListener('click', function() {
+        confirmModal.classList.remove('visible');
+        confirmModal.classList.add('hidden');
+        
+        // 延迟后完全隐藏弹窗
+        setTimeout(() => {
+            confirmModal.classList.add('hidden');
+        }, 300);
+        
+        recordToDelete = null;
+    });
+    
+    // 确认删除
+    confirmDeleteBtn.addEventListener('click', function() {
+        if (recordToDelete) {
+            deleteRecord(recordToDelete);
+            recordToDelete = null;
+        }
+        
+        confirmModal.classList.remove('visible');
+        confirmModal.classList.add('hidden');
+        
+        // 延迟后完全隐藏弹窗
+        setTimeout(() => {
+            confirmModal.classList.add('hidden');
+        }, 300);
+    });
+}
+
+// 显示提示框
+function showToast(message, type = 'success') {
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toast-message');
+    
+    // 设置消息
+    toastMessage.textContent = message;
+    
+    // 设置类型样式
+    toast.className = 'fixed bottom-4 right-4 px-4 py-2 rounded-md shadow-lg transform transition-all duration-300 z-50';
+    
+    switch (type) {
+        case 'success':
+            toast.classList.add('bg-green-500', 'text-white');
+            toast.querySelector('i').className = 'fa fa-check-circle mr-2';
+            break;
+        case 'error':
+            toast.classList.add('bg-red-500', 'text-white');
+            toast.querySelector('i').className = 'fa fa-exclamation-circle mr-2';
+            break;
+        case 'warning':
+            toast.classList.add('bg-yellow-500', 'text-white');
+            toast.querySelector('i').className = 'fa fa-exclamation-triangle mr-2';
+            break;
+    }
+    
+    // 显示提示框
+    toast.classList.add('visible');
+    
+    // 3秒后隐藏
+    setTimeout(() => {
+        toast.classList.remove('visible');
+        toast.classList.add('hidden');
+        
+        // 延迟后重置类名
+        setTimeout(() => {
+            toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg transform translate-y-10 opacity-0 transition-all duration-300 z-50';
+        }, 300);
+    }, 3000);
+}
+
+// 绑定备份提示事件
+function bindBackupReminderEvents() {
+    const backupModal = document.getElementById('backup-modal');
+    const remindLaterBtn = document.getElementById('remind-later');
+    const backupNowBtn = document.getElementById('backup-now');
+    
+    // 稍后提醒
+    remindLaterBtn.addEventListener('click', function() {
+        // 设置稍后提醒的时间（7天后）
+        const nextReminder = Date.now() + 7 * 24 * 60 * 60 * 1000;
+        localStorage.setItem('nextBackupReminder', nextReminder);
+        
+        // 隐藏弹窗
+        backupModal.classList.remove('visible');
+        backupModal.classList.add('hidden');
+        
+        // 延迟后完全隐藏弹窗
+        setTimeout(() => {
+            backupModal.classList.add('hidden');
+        }, 300);
+    });
+    
+    // 立即备份
+    backupNowBtn.addEventListener('click', function() {
+        // 隐藏弹窗
+        backupModal.classList.remove('visible');
+        backupModal.classList.add('hidden');
+        
+        // 延迟后完全隐藏弹窗并导出数据
+        setTimeout(() => {
+            backupModal.classList.add('hidden');
+            exportData();
+        }, 300);
+    });
+}
+
+// 检查是否需要显示备份提示
+function checkBackupReminder() {
+    const backupModal = document.getElementById('backup-modal');
+    const lastBackup = localStorage.getItem('lastBackupTime');
+    const nextReminder = localStorage.getItem('nextBackupReminder');
+    const currentDate = new Date();
+    
+    // 如果是每月1号，或者距离上次备份超过30天，或者超过了提醒时间
+    if (
+        currentDate.getDate() === 1 || 
+        (!lastBackup && !nextReminder) ||
+        (lastBackup && (currentDate - new Date(lastBackup)) > 30 * 24 * 60 * 60 * 1000) ||
+        (nextReminder && currentDate > new Date(parseInt(nextReminder)))
+    ) {
+        // 显示备份提示
+        backupModal.classList.remove('hidden');
+        backupModal.classList.add('visible');
+    }
+}
+
+// 更新上次备份时间
+function updateLastBackupTime(isBackup = false) {
+    const lastBackupTimeElement = document.getElementById('last-backup-time');
+    
+    if (isBackup) {
+        const currentTime = new Date().toLocaleString('zh-CN');
+        localStorage.setItem('lastBackupTime', currentTime);
+        lastBackupTimeElement.textContent = currentTime;
+    } else {
+        const lastBackup = localStorage.getItem('lastBackupTime');
+        lastBackupTimeElement.textContent = lastBackup || '暂无备份记录';
+    }
+}
