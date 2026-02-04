@@ -534,6 +534,7 @@ function updateBrandRanking() {
 function bindDataManagementEvents() {
     const exportBtn = document.getElementById('export-btn');
     const importFile = document.getElementById('import-file');
+    const clearDataBtn = document.getElementById('clear-data-btn');
     
     // 文件选择事件
     importFile.addEventListener('change', function(e) {
@@ -585,6 +586,15 @@ function bindDataManagementEvents() {
     // 导出按钮点击事件
     exportBtn.addEventListener('click', function() {
         exportData();
+    });
+    
+    // 清空按钮点击事件
+    clearDataBtn.addEventListener('click', function() {
+        if (confirm('确定要清空所有数据吗？此操作无法撤销！')) {
+            localStorage.removeItem('drinkRecords');
+            alert('数据已清空！');
+            location.reload();
+        }
     });
 }
 
