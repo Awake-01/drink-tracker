@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>饮品记录工具</title>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
@@ -129,6 +129,9 @@
                         </label>
                         <button id="export-btn" class="btn btn-primary">
                             <i class="fa fa-download"></i>导出数据
+                        </button>
+                        <button id="clear-data-btn" class="btn btn-danger">
+                            <i class="fa fa-trash"></i>清空数据
                         </button>
                         <input type="file" id="import-file" accept=".json" class="hidden">
                         <div class="backup-info">
