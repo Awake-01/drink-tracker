@@ -318,9 +318,9 @@ function bindRecordFormEvents() {
                 customInput.addEventListener('input', function() {
                     drinkBrandInput.value = this.value.trim() || '其它';
                 });
-                // 将输入框插入到品牌容器后面
+                // 将输入框插入到品牌容器内部的末尾
                 const brandContainer = document.getElementById('drink-brand-container');
-                brandContainer.parentNode.insertBefore(customInput, brandContainer.nextSibling);
+                brandContainer.appendChild(customInput);
             }
             // 显示输入框并聚焦
             customInput.style.display = 'block';
@@ -478,6 +478,11 @@ function generateId() {
 function bindStatsEvents() {
     const filterBtn = document.getElementById('filter-btn');
     const yearSelect = document.getElementById('year-select');
+    const monthSelect = document.getElementById('month-select');
+    
+    // 当前排序状态（固定为降序）
+    let currentSortBy = 'count';
+    const currentSortOrder = 'desc';
     
     filterBtn.addEventListener('click', function() {
         updateStats();
@@ -489,12 +494,40 @@ function bindStatsEvents() {
         initMonthSelector(selectedYear);
         updateStats();
     });
+    
+    // 当月份选择变化时，更新统计
+    monthSelect.addEventListener('change', function() {
+        updateStats();
+    });
+    
+    // 绑定排序事件（固定降序）
+    document.querySelectorAll('.sortable').forEach(header => {
+        header.addEventListener('click', function() {
+            const sortBy = this.getAttribute('data-sort');
+            
+            // 切换排序字段，始终使用降序
+            if (sortBy !== currentSortBy) {
+                currentSortBy = sortBy;
+                
+                // 更新排行榜
+                updateBrandRanking(currentSortBy, currentSortOrder);
+            }
+        });
+    });
 }
 
 // 更新统计数据
 function updateStats() {
     updateOverview();
-    updateBrandRanking();
+    
+    // 获取当前排序字段，始终使用降序
+    const currentSortHeader = document.querySelector('.sortable i.fa-sort-desc, .sortable i.fa-sort-asc');
+    if (currentSortHeader) {
+        const sortBy = currentSortHeader.parentElement.getAttribute('data-sort');
+        updateBrandRanking(sortBy, 'desc');
+    } else {
+        updateBrandRanking('count', 'desc');
+    }
 }
 
 // 更新总览数据
@@ -523,7 +556,7 @@ function updateOverview() {
 }
 
 // 更新品牌排行榜
-function updateBrandRanking() {
+function updateBrandRanking(sortBy = 'count', sortOrder = 'desc') {
     const yearSelect = document.getElementById('year-select');
     const monthSelect = document.getElementById('month-select');
     const brandRankingBody = document.getElementById('brand-ranking-body');
@@ -538,17 +571,51 @@ function updateBrandRanking() {
                recordDate.getMonth() + 1 === selectedMonth;
     });
     
-    // 按品牌统计杯数
-    const brandCounts = {};
+    // 按品牌统计数据
+    const brandStats = {};
     filteredRecords.forEach(record => {
         const brand = record.brand;
-        brandCounts[brand] = (brandCounts[brand] || 0) + 1;
+        if (!brandStats[brand]) {
+            brandStats[brand] = {
+                count: 0,
+                totalCalories: 0,
+                totalPrice: 0
+            };
+        }
+        brandStats[brand].count += 1;
+        brandStats[brand].totalCalories += (record.calories || 0);
+        brandStats[brand].totalPrice += (record.price || 0);
     });
     
     // 转换为数组并排序
-    const brandRanking = Object.entries(brandCounts)
-        .map(([brand, count]) => ({ brand, count }))
-        .sort((a, b) => b.count - a.count);
+    const brandRanking = Object.entries(brandStats)
+        .map(([brand, stats]) => ({ 
+            brand, 
+            count: stats.count,
+            totalCalories: stats.totalCalories,
+            totalPrice: stats.totalPrice
+        }))
+        .sort((a, b) => {
+            let aValue, bValue;
+            switch (sortBy) {
+                case 'count':
+                    aValue = a.count;
+                    bValue = b.count;
+                    break;
+                case 'calories':
+                    aValue = a.totalCalories;
+                    bValue = b.totalCalories;
+                    break;
+                case 'price':
+                    aValue = a.totalPrice;
+                    bValue = b.totalPrice;
+                    break;
+                default:
+                    aValue = a.count;
+                    bValue = b.count;
+            }
+            return sortOrder === 'desc' ? bValue - aValue : aValue - bValue;
+        });
     
     // 清空表格
     brandRankingBody.innerHTML = '';
@@ -556,7 +623,7 @@ function updateBrandRanking() {
     // 如果没有数据，显示空状态
     if (brandRanking.length === 0) {
         const emptyRow = document.createElement('tr');
-        emptyRow.innerHTML = `<td colspan="3" class="empty-cell">暂无数据</td>`;
+        emptyRow.innerHTML = `<td colspan="5" class="empty-cell">暂无数据</td>`;
         brandRankingBody.appendChild(emptyRow);
         return;
     }
@@ -569,9 +636,28 @@ function updateBrandRanking() {
             <td class="py-3 px-4 border-b border-gray-200">${index + 1}</td>
             <td class="py-3 px-4 border-b border-gray-200">${item.brand}</td>
             <td class="py-3 px-4 border-b border-gray-200">${item.count}</td>
+            <td class="py-3 px-4 border-b border-gray-200">${item.totalCalories}</td>
+            <td class="py-3 px-4 border-b border-gray-200">${item.totalPrice.toFixed(2)}</td>
         `;
         brandRankingBody.appendChild(row);
     });
+    
+    // 更新排序图标
+    updateSortIcons(sortBy);
+}
+
+// 更新排序图标（固定降序）
+function updateSortIcons(activeSort) {
+    // 重置所有排序图标
+    document.querySelectorAll('.sortable i').forEach(icon => {
+        icon.className = 'fa fa-sort';
+    });
+    
+    // 设置当前排序的图标（始终显示降序图标）
+    const activeHeader = document.querySelector(`[data-sort="${activeSort}"] i`);
+    if (activeHeader) {
+        activeHeader.className = 'fa fa-sort-desc';
+    }
 }
 
 // 绑定数据管理事件
