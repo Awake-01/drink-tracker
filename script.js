@@ -265,6 +265,38 @@ function bindRecordFormEvents() {
         });
     });
     
+    // 绑定温度标签点击事件
+    const drinkTemperatureBtns = document.querySelectorAll('.temperature-tag');
+    const drinkTemperatureInput = document.getElementById('drink-temperature');
+    drinkTemperatureBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // 移除所有标签的激活状态
+            drinkTemperatureBtns.forEach(b => b.classList.remove('active'));
+            
+            // 添加当前标签的激活状态
+            this.classList.add('active');
+            
+            // 更新隐藏输入字段的值
+            drinkTemperatureInput.value = this.getAttribute('data-value');
+        });
+    });
+    
+    // 绑定甜度标签点击事件
+    const drinkSweetnessBtns = document.querySelectorAll('.sweetness-tag');
+    const drinkSweetnessInput = document.getElementById('drink-sweetness');
+    drinkSweetnessBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // 移除所有标签的激活状态
+            drinkSweetnessBtns.forEach(b => b.classList.remove('active'));
+            
+            // 添加当前标签的激活状态
+            this.classList.add('active');
+            
+            // 更新隐藏输入字段的值
+            drinkSweetnessInput.value = this.getAttribute('data-value');
+        });
+    });
+    
     // 处理自定义品牌输入框的显示和隐藏
     function handleCustomBrandInput(brandValue) {
         // 先隐藏已存在的自定义输入框
@@ -345,6 +377,8 @@ function bindRecordFormEvents() {
             type: type,
             brand: brand,
             name: document.getElementById('drink-name').value || '',
+            temperature: document.getElementById('drink-temperature').value || '',
+            sweetness: document.getElementById('drink-sweetness').value || '',
             calories: document.getElementById('drink-calories').value ? parseInt(document.getElementById('drink-calories').value) : null,
             price: document.getElementById('drink-price').value ? parseFloat(document.getElementById('drink-price').value) : null
         };
@@ -383,6 +417,16 @@ function resetRecordForm() {
     const drinkBrandBtns = document.querySelectorAll('.brand-tag');
     drinkBrandBtns.forEach(btn => btn.classList.remove('active'));
     document.getElementById('drink-brand').value = '';
+    
+    // 重置温度标签
+    const temperatureBtns = document.querySelectorAll('.temperature-tag');
+    temperatureBtns.forEach(btn => btn.classList.remove('active'));
+    document.getElementById('drink-temperature').value = '';
+    
+    // 重置甜度标签
+    const sweetnessBtns = document.querySelectorAll('.sweetness-tag');
+    sweetnessBtns.forEach(btn => btn.classList.remove('active'));
+    document.getElementById('drink-sweetness').value = '';
     
     // 隐藏自定义品牌输入框（如果存在）
     const customBrandInput = document.getElementById('custom-brand-input');
@@ -642,6 +686,8 @@ function updateRecordsTable() {
             <td class="py-3 px-4 border-b border-gray-200">${record.type}</td>
             <td class="py-3 px-4 border-b border-gray-200">${record.brand}</td>
             <td class="py-3 px-4 border-b border-gray-200">${record.name || '-'}</td>
+            <td class="py-3 px-4 border-b border-gray-200">${record.temperature || '-'}</td>
+            <td class="py-3 px-4 border-b border-gray-200">${record.sweetness || '-'}</td>
             <td class="py-3 px-4 border-b border-gray-200">${record.calories !== null ? record.calories : '-'}</td>
             <td class="py-3 px-4 border-b border-gray-200">${record.price !== null ? record.price.toFixed(2) : '-'}</td>
             <td class="py-3 px-4 border-b border-gray-200">
@@ -695,6 +741,8 @@ function editRecord(id) {
     // 填充表单
     document.getElementById('record-id').value = record.id;
     document.getElementById('drink-name').value = record.name || '';
+    document.getElementById('drink-temperature').value = record.temperature || '';
+    document.getElementById('drink-sweetness').value = record.sweetness || '';
     document.getElementById('drink-calories').value = record.calories || '';
     document.getElementById('drink-price').value = record.price || '';
     
@@ -735,6 +783,24 @@ function editRecord(id) {
         
         // 设置品牌值
         drinkBrandInput.value = record.brand;
+        
+        // 设置温度标签
+        const temperatureTags = document.querySelectorAll('.temperature-tag');
+        temperatureTags.forEach(tag => {
+            tag.classList.remove('active');
+            if (tag.getAttribute('data-value') === record.temperature) {
+                tag.classList.add('active');
+            }
+        });
+        
+        // 设置甜度标签
+        const sweetnessTags = document.querySelectorAll('.sweetness-tag');
+        sweetnessTags.forEach(tag => {
+            tag.classList.remove('active');
+            if (tag.getAttribute('data-value') === record.sweetness) {
+                tag.classList.add('active');
+            }
+        });
         
         // 检查是否已存在自定义输入框
         let customBrandInput = document.getElementById('custom-brand-input');
