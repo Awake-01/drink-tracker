@@ -1,6 +1,4 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
+<html lang="zh-CN"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>饮品记录工具</title>
@@ -103,13 +101,15 @@
                                 <tr>
                                     <th>排名</th>
                                     <th>品牌</th>
-                                    <th>杯数</th>
+                                    <th class="sortable" data-sort="count">总杯数 <i class="fa fa-sort"></i></th>
+                                    <th class="sortable" data-sort="calories">总热量 <i class="fa fa-sort"></i></th>
+                                    <th class="sortable" data-sort="price">总价格 <i class="fa fa-sort"></i></th>
                                 </tr>
                             </thead>
                             <tbody id="brand-ranking-body">
                                 <!-- 动态生成排行榜数据 -->
                                 <tr>
-                                    <td colspan="3" class="empty-cell">暂无数据</td>
+                                    <td colspan="5" class="empty-cell">暂无数据</td>
                                 </tr>
                             </tbody>
                         </table>
