@@ -456,7 +456,10 @@ h2 {
 
 /* 自定义品牌输入框样式 */
 .custom-brand-input {
-    margin-top: 1.5rem;
+    margin-top: 0.5rem;
+    width: 100%;
+    display: block;
+    box-sizing: border-box;
 }
 
 /* 排名样式 */
