@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>饮品记录工具</title>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
@@ -149,6 +149,8 @@
                                     <th>类型</th>
                                     <th>品牌</th>
                                     <th>名称</th>
+                                    <th>温度</th>
+                                    <th>甜度</th>
                                     <th>热量</th>
                                     <th>价格</th>
                                     <th>操作</th>
@@ -207,6 +209,27 @@
                 <div class="form-group">
                     <label for="drink-name">名称</label>
                     <input type="text" id="drink-name" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>温度</label>
+                    <div class="tag-container" id="drink-temperature-container">
+                        <button type="button" class="tag-btn temperature-tag" data-value="正常冰">正常冰</button>
+                        <button type="button" class="tag-btn temperature-tag" data-value="少冰">少冰</button>
+                        <button type="button" class="tag-btn temperature-tag" data-value="去冰">去冰</button>
+                        <button type="button" class="tag-btn temperature-tag" data-value="热">热</button>
+                    </div>
+                    <input type="hidden" id="drink-temperature">
+                </div>
+                <div class="form-group">
+                    <label>甜度</label>
+                    <div class="tag-container" id="drink-sweetness-container">
+                        <button type="button" class="tag-btn sweetness-tag" data-value="全糖">全糖</button>
+                        <button type="button" class="tag-btn sweetness-tag" data-value="七分糖">七分糖</button>
+                        <button type="button" class="tag-btn sweetness-tag" data-value="五分糖">五分糖</button>
+                        <button type="button" class="tag-btn sweetness-tag" data-value="三分糖">三分糖</button>
+                        <button type="button" class="tag-btn sweetness-tag" data-value="去糖">去糖</button>
+                    </div>
+                    <input type="hidden" id="drink-sweetness">
                 </div>
                 <div class="form-row">
                     <div class="form-group">
