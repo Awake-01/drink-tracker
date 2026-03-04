@@ -122,8 +122,8 @@ function getMonthsWithData(year) {
         }
     });
 
-    // 转换为数组并升序排序
-    return Array.from(months).sort((a, b) => a - b);
+    // 转换为数组并降序排序
+    return Array.from(months).sort((a, b) => b - a);
 }
 
 // 初始化月份选择器
@@ -154,30 +154,50 @@ function initMonthSelector(year) {
 // 设置当前年月为默认筛选条件
 function setCurrentYearMonth() {
     const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth() + 1;
     const yearSelect = document.getElementById('year-select');
     const monthSelect = document.getElementById('month-select');
 
     // 获取有数据的年份
     const yearsWithData = getYearsWithData();
     
-    // 如果有数据，选择最新的年份
-    if (yearsWithData.length > 0) {
+    // 优先尝试选择当前年月
+    if (yearsWithData.includes(currentYear)) {
+        yearSelect.value = currentYear;
+        
+        // 根据当前年份初始化月份选择器
+        initMonthSelector(currentYear);
+        
+        // 获取当前年份有数据的月份
+        const monthsWithData = getMonthsWithData(currentYear);
+        if (monthsWithData.includes(currentMonth)) {
+            // 如果当前月份有数据，选择当前月份
+            monthSelect.value = currentMonth;
+        } else if (monthsWithData.length > 0) {
+            const latestMonth = monthsWithData[0];
+            // 如果当前月份没有数据，选择最新月份
+            monthSelect.value = latestMonth;
+        }
+    } else if (yearsWithData.length > 0) {
+        // 如果当前年份没有数据但有其他年份数据，选择最新年份
         yearSelect.value = yearsWithData[0];
-
+        
         // 根据选择的年份初始化月份选择器
         initMonthSelector(parseInt(yearSelect.value));
-
+        
         // 获取选择年份有数据的月份
         const monthsWithData = getMonthsWithData(parseInt(yearSelect.value));
-
-        // 如果有数据，选择最新的月份
+        
+        // 如果有数据，选择最新月份
         if (monthsWithData.length > 0) {
-            monthSelect.value = monthsWithData[monthsWithData.length - 1];
+            const latestMonth = monthsWithData[0];
+            monthSelect.value = latestMonth;
         }
     } else {
-        // 如果没有数据，使用当前年月
-        yearSelect.value = currentDate.getFullYear();
-        monthSelect.value = currentDate.getMonth() + 1;
+        // 如果完全没有数据，使用当前年月
+        yearSelect.value = currentYear;
+        monthSelect.value = currentMonth;
     }
 }
 
